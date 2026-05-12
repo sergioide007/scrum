@@ -41,19 +41,19 @@ El equipo puede hacer `git pull` y tener la herramienta actualizada sin migracio
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                      BROWSER / WEBVIEW                   │
-│                                                          │
+│                      BROWSER / WEBVIEW                  │
+│                                                         │
 │   DATA (seed)  ──► initState() ──► STATE (runtime)      │
-│   [hardcoded]                      [JS heap]             │
-│                                         │                │
-│                                    persist()             │
-│                                         │                │
-│                                    localStorage          │
-│                                    "scrumState"          │
-│                                         │                │
+│   [hardcoded]                      [JS heap]            │
+│                                         │               │
+│                                    persist()            │
+│                                         │               │
+│                                    localStorage         │
+│                                    "scrumState"         │
+│                                         │               │
 │                              ┌──────────┴───────────┐   │
-│                              │   Export / Download   │   │
-│                              │  JSON  │  SPEC.md     │   │
+│                              │   Export / Download  │   │
+│                              │  JSON  │  SPEC.md    │   │
 │                              └──────────┬───────────┘   │
 └─────────────────────────────────────────┼───────────────┘
                                           │
@@ -73,21 +73,21 @@ El ciclo completo es:
 
 ```
 ┌──────────────────────────────────────────┐
-│              UI Layer                     │
+│              UI Layer                    │
 │   renderBoard · renderBacklog · Charts   │
 │   Modal system · Drag & Drop             │
 └───────────────────┬──────────────────────┘
                     │ lee/escribe
 ┌───────────────────▼──────────────────────┐
-│           Domain / State Layer            │
+│           Domain / State Layer           │
 │   STATE: { team, epics, sprints, items } │
 │   initState() · persist() · uid()        │
 └───────────────────┬──────────────────────┘
                     │
 ┌───────────────────▼──────────────────────┐
-│         Storage Adapter (actual)          │
-│         localStorage                      │
-│         JSON download (Blob URL)          │
+│         Storage Adapter (actual)         │
+│         localStorage                     │
+│         JSON download (Blob URL)         │
 └──────────────────────────────────────────┘
 ```
 
@@ -170,8 +170,8 @@ const DynamoDBAdapter = {
 
 ```
 ┌───────────────────────────────────────────────────────────┐
-│                    Domain / State Layer                    │
-│                  (sin cambios, agnóstico)                  │
+│                    Domain / State Layer                   │
+│                  (sin cambios, agnóstico)                 │
 └──────────────────────────┬────────────────────────────────┘
                            │ StoragePort
           ┌────────────────┼────────────────┐
@@ -254,8 +254,6 @@ En modo integrado, las acciones AI (estimar, refinar historias, generar SPEC) se
 ```
 scrum/
 ├── index.html    ← aplicación completa (HTML + CSS + JS inline)
-├── styles.css    ← extensión de estilos (actualmente placeholder)
-├── script.js     ← extensión de lógica (actualmente placeholder)
 └── README.md     ← este documento
 ```
 
