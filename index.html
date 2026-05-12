@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scrum Board — Spec-Driven | Alpaquitay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --ink:#0a0f1e; --paper:#f4f1eb;
+  --s0:#0d1117; --s1:#161b22; --s2:#21262d; --s3:#30363d;
+  --signal:#00e5a0; --signal-dim:#00a872;
+  --accent:#ff4b6e; --blue:#1a5fe4; --warn:#f59e0b;
+  --muted:#6b7280; --muted-lt:#9ca3af; --text:#e6edf3;
+  --border:rgba(255,255,255,0.08);
+  --radius:8px;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--s0);color:var(--text);min-height:100vh;font-size:14px;line-height:1.6}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--s1)}
+::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:var(--s0);border-bottom:1px solid var(--border);display:flex;align-items:center;height:52px;padding:0 20px;gap:2px;overflow-x:auto}
+.nav-brand{font-family:var(--mono);font-size:12px;color:var(--signal);letter-spacing:.08em;white-space:nowrap;margin-right:20px;font-weight:600}
+.nav-btn{background:none;border:none;color:var(--muted-lt);font-family:var(--sans);font-size:12px;padding:0 12px;height:52px;cursor:pointer;white-space:nowrap;transition:color .15s;border-bottom:2px solid transparent;font-weight:500}
+.nav-btn:hover{color:#fff}
+.nav-btn.active{color:var(--signal);border-bottom-color:var(--signal)}
+.nav-spacer{flex:1}
+.aq-badge{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid rgba(0,229,160,.25);color:var(--signal);cursor:pointer;transition:background .2s;white-space:nowrap}
+.aq-badge:hover{background:rgba(0,229,160,.08)}
+.aq-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);transition:background .3s}
+.aq-dot.on{background:var(--signal);box-shadow:0 0 6px var(--signal)}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+
+/* LAYOUT */
+.container{max-width:1320px;margin:0 auto;padding:24px 20px}
+
+/* SPRINT HEADER */
+.sprint-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.sprint-hd h2{font-size:18px;font-weight:700}
+.sprint-hd p{font-size:11px;color:var(--muted-lt);margin-top:2px}
+.sprint-stats{display:flex;gap:10px;flex-wrap:wrap}
+.s-stat{background:var(--s1);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;text-align:center;min-width:76px}
+.s-stat .val{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--signal)}
+.s-stat .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+
+/* BOARD */
+.board{display:flex;gap:14px;min-height:62vh;overflow-x:auto;padding-bottom:8px;align-items:flex-start}
+.col{min-width:256px;flex:1;background:var(--s1);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;max-height:78vh}
+.col-hd{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--border);flex-shrink:0}
+.col-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.col-badge{font-family:var(--mono);font-size:10px;background:var(--s3);color:var(--muted-lt);padding:1px 7px;border-radius:10px}
+.col-body{flex:1;padding:10px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;min-height:80px}
+.col-body.dov{background:rgba(0,229,160,.04);border-radius:0 0 10px 10px}
+.col-add{padding:8px 10px;border-bottom:1px solid var(--border)}
+.col-add button{width:100%;background:none;border:1px dashed var(--border);color:var(--muted);font-size:11px;padding:6px;border-radius:var(--radius);cursor:pointer;transition:color .15s,border-color .15s;font-family:var(--sans)}
+.col-add button:hover{color:var(--signal);border-color:rgba(0,229,160,.3)}
+
+/* TASK CARD */
+.task{background:var(--s2);border:1px solid var(--border);border-radius:var(--radius);padding:11px;cursor:grab;transition:border-color .2s,box-shadow .2s;user-select:none}
+.task:hover{border-color:rgba(0,229,160,.3);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.task.dragging{opacity:.45;transform:scale(.97)}
+.task-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:7px}
+.task-pts{font-family:var(--mono);font-size:11px;font-weight:700;background:var(--s3);color:var(--signal);padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.task-title{font-size:12.5px;font-weight:600;line-height:1.4;margin-bottom:4px}
+.task-desc{font-size:11px;color:var(--muted-lt);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.task-foot{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+.task-actions{display:flex;gap:3px;opacity:0;transition:opacity .15s}
+.task:hover .task-actions{opacity:1}
+.t-btn{background:var(--s3);border:none;color:var(--muted-lt);padding:3px 7px;border-radius:4px;font-size:10px;cursor:pointer;transition:color .15s}
+.t-btn:hover{color:#fff}
+.t-btn.ai:hover{color:var(--signal)}
+.t-btn.del:hover{color:var(--accent)}
+.assignee-chip{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted-lt)}
+.avatar{width:20px;height:20px;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* TAGS */
+.tag{display:inline-block;font-family:var(--mono);font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-right:3px}
+.tag-feature{background:rgba(26,95,228,.2);color:#60a5fa}
+.tag-bug{background:rgba(255,75,110,.2);color:#ff7070}
+.tag-tech{background:rgba(245,158,11,.2);color:#fcd34d}
+.tag-spike{background:rgba(0,229,160,.15);color:var(--signal)}
+.tag-epic{background:rgba(139,92,246,.2);color:#a78bfa}
+
+/* PRIORITY DOT */
+.pdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:2px}
+.p-c{background:#ff4b6e} .p-h{background:#f59e0b} .p-m{background:#60a5fa} .p-l{background:var(--muted)}
+
+/* MODAL */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);align-items:flex-start;justify-content:center;padding-top:56px}
+.overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:26px;width:100%;max-width:500px;max-height:82vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:18px}
+.fg{margin-bottom:13px}
+.fl{display:block;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.fi,.fs,.ft{width:100%;font-family:var(--sans);font-size:13px;padding:8px 11px;border:1.5px solid var(--border);border-radius:var(--radius);background:var(--s2);color:var(--text);outline:none;transition:border-color .15s}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--signal)}
+.ft{resize:vertical;min-height:72px}
+.fs option{background:var(--s2)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mf{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:transform .12s,opacity .12s;font-family:var(--sans)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:none}
+.btn-p{background:var(--signal);color:var(--ink)}
+.btn-o{background:transparent;color:var(--text);border:1.5px solid var(--border)}
+.btn-o:hover{border-color:var(--signal);color:var(--signal)}
+.btn-d{background:transparent;color:var(--accent);border:1.5px solid rgba(255,75,110,.3)}
+.btn-d:hover{background:rgba(255,75,110,.1)}
+.btn-ai{background:rgba(0,229,160,.1);color:var(--signal);border:1px solid rgba(0,229,160,.3)}
+.btn-ai:hover{background:rgba(0,229,160,.2)}
+.btn-sm{padding:5px 11px;font-size:11px}
+
+/* BACKLOG TABLE */
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-weight:400;background:var(--s1)}
+tbody td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);font-size:12px;vertical-align:middle}
+tbody tr:last-child td{border:none}
+tbody tr:hover td{background:rgba(255,255,255,.02)}
+tbody tr.in-sprint td{opacity:.5}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px}
+.chart-card h3{font-size:13px;font-weight:700;margin-bottom:3px}
+.chart-card .sub{font-size:11px;color:var(--muted);margin-bottom:14px}
+
+/* VELOCITY BARS */
+.vel-bars{display:flex;gap:10px;align-items:flex-end;height:110px;margin-top:8px}
+.vel-group{display:flex;gap:2px;align-items:flex-end;flex:1;flex-direction:column;align-items:center}
+.vel-bar-row{display:flex;gap:2px;align-items:flex-end;width:100%}
+.vel-bar{flex:1;border-radius:3px 3px 0 0;min-height:4px;transition:height .4s cubic-bezier(.34,1.56,.64,1)}
+.vb-cmt{background:rgba(245,158,11,.6)}
+.vb-cpl{background:var(--signal)}
+.vel-lbl{font-size:9px;color:var(--muted);margin-top:4px;text-align:center}
+
+/* AI PANEL */
+.ai-panel{background:var(--s1);border:1px solid rgba(0,229,160,.2);border-radius:10px;padding:18px}
+.ai-panel-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:12px;color:var(--signal)}
+.ai-msg{background:var(--s2);border-radius:var(--radius);padding:12px;font-size:12px;line-height:1.65;color:var(--muted-lt);min-height:60px;border-left:3px solid var(--signal);white-space:pre-wrap;font-family:var(--mono)}
+.ai-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+/* SECTION HEAD */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.sh h2{font-size:15px;font-weight:700}
+.sh p{font-size:11px;color:var(--muted);margin-top:2px}
+.sh-actions{display:flex;gap:8px}
+
+/* BADGE */
+.bdg{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.bdg-g{background:rgba(0,229,160,.15);color:var(--signal)}
+.bdg-b{background:rgba(26,95,228,.2);color:#60a5fa}
+.bdg-r{background:rgba(255,75,110,.2);color:#ff7070}
+.bdg-w{background:rgba(245,158,11,.2);color:#fcd34d}
+.bdg-gray{background:var(--s3);color:var(--muted-lt)}
+
+/* CAPACITY BAR */
+.cap-bar{height:7px;background:var(--s3);border-radius:4px;margin-top:5px;overflow:hidden}
+.cap-fill{height:100%;border-radius:4px;background:var(--signal);transition:width .3s}
+.cap-fill.over{background:var(--accent)}
+
+/* EMPTY STATE */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 16px;color:var(--muted);text-align:center}
+.empty .eicon{font-size:28px;opacity:.35;margin-bottom:10px}
+.empty p{font-size:11px}
+
+/* TOAST */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:500;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:tin .2s ease;pointer-events:auto}
+.toast.ok{border-color:rgba(0,229,160,.4)}
+.toast.err{border-color:rgba(255,75,110,.4)}
+@keyframes tin{from{transform:translateX(16px);opacity:0}to{transform:none;opacity:1}}
+
+/* SPRINT PLANNING */
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.plan-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px}
+.plan-card h3{font-size:13px;font-weight:700;margin-bottom:12px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .chart-grid,.plan-grid{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr}
+}
+@media(max-width:700px){
+  .board{flex-direction:column}
+  .col{min-width:unset;max-height:unset}
+  .sprint-hd{flex-direction:column}
+  .sprint-stats{gap:7px}
+}
+@media(max-width:480px){
+  nav{padding:0 12px}
+  .container{padding:14px 12px}
+  .s-stat{min-width:60px;padding:8px 10px}
+  .s-stat .val{font-size:16px}
+  .nav-brand{font-size:11px;margin-right:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">▲ SCRUM / SDD</div>
+  <button class="nav-btn active" onclick="showPage('board',this)">Board</button>
+  <button class="nav-btn" onclick="showPage('backlog',this)">Backlog</button>
+  <button class="nav-btn" onclick="showPage('metricas',this)">Métricas</button>
+  <button class="nav-btn" onclick="showPage('planning',this)">Planning</button>
+  <div class="nav-spacer"></div>
+  <div class="aq-badge" id="aqBadge" onclick="showPage('alpaquitay', document.querySelectorAll('.nav-btn')[3])">
+    <div class="aq-dot" id="aqDot"></div>
+    <span id="aqLabel">Alpaquitay</span>
+  </div>
+</nav>
+
+<!-- PAGE: BOARD -->
+<div id="page-board" class="page active">
+  <div class="container">
+    <div class="sprint-hd">
+      <div>
+        <h2 id="sprintName">—</h2>
+        <p id="sprintGoal">—</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <div class="sprint-stats" id="sprintStats"></div>
+        <button class="btn btn-sm btn-o" onclick="openModal('sprint')">+ Sprint</button>
+        <button class="btn btn-sm btn-p" onclick="openModal('task',null,'todo')">+ Tarea</button>
+      </div>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+</div>
+
+<!-- PAGE: BACKLOG -->
+<div id="page-backlog" class="page">
+  <div class="container">
+    <div class="sh">
+      <div><h2>Product Backlog</h2><p>Todas las historias sin asignar a sprint</p></div>
+      <div class="sh-actions">
+        <button class="btn btn-sm btn-ai" onclick="aqAnalyzeBacklog()">✦ Analizar con Alpaquitay</button>
+        <button class="btn btn-sm btn-p" onclick="openModal('task',null,'backlog')">+ Historia</button>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr id="backlogHead"></tr></thead>
+        <tbody id="backlogBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: MÉTRICAS -->
+<div id="page-metricas" class="page">
+  <div class="container">
+    <div class="sh" style="margin-bottom:20px">
+      <div><h2>Métricas del Sprint</h2><p>Burndown, velocidad y salud del equipo</p></div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Burndown Chart</h3>
+        <p class="sub">Puntos restantes vs. línea ideal del sprint activo</p>
+        <div class="chart-wrap"><canvas id="burndownCanvas" height="180"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Velocidad por Sprint</h3>
+        <p class="sub">Comprometidos <span style="color:var(--warn)">▪</span> vs. Completados <span style="color:var(--signal)">▪</span></p>
+        <div id="velBars" class="vel-bars"></div>
+      </div>
+    </div>
+    <div class="ai-panel" style="margin-top:18px">
+      <div class="ai-panel-title">✦ Análisis de Sprint — Alpaquitay</div>
+      <div class="ai-msg" id="aiSprintMsg">Presiona "Analizar Sprint" para obtener recomendaciones basadas en el estado actual.</div>
+      <div class="ai-actions">
+        <button class="btn btn-sm btn-ai" onclick="aqSprintHealth()">Analizar Sprint</button>
+        <button class="btn btn-sm btn-o" onclick="aqGenerateSpec()">Generar SPEC del Sprint</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: PLANNING -->
+<div id="page-planning" class="page">
+  <div class="container">
+    <div class="sh" style="margin-bottom:20px">
+      <div><h2>Sprint Planning</h2><p>Capacidad del equipo y selección de historias</p></div>
+      <button class="btn btn-sm btn-p" onclick="openModal('sprint')">Nuevo Sprint</button>
+    </div>
+    <div class="plan-grid">
+      <div class="plan-card">
+        <h3>Capacidad del Equipo</h3>
+        <div id="teamCapacity"></div>
+      </div>
+      <div class="plan-card">
+        <h3>Historias candidatas al sprint</h3>
+        <div id="candidateItems"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: ALPAQUITAY -->
+<div id="page-alpaquitay" class="page">
+  <div class="container">
+    <div class="sh" style="margin-bottom:20px">
+      <div><h2>✦ Alpaquitay AI</h2><p>Asistente de ingeniería integrado con el tablero</p></div>
+      <div id="aqStatus"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px" id="aqPanels"></div>
+  </div>
+</div>
+
+<!-- MODAL: TASK -->
+<div class="overlay" id="taskOverlay">
+  <div class="modal">
+    <h3 id="taskModalTitle">Nueva Historia</h3>
+    <div class="frow">
+      <div class="fg"><label class="fl">Tipo</label>
+        <select class="fs" id="tType">
+          <option value="feature">Feature</option>
+          <option value="bug">Bug</option>
+          <option value="tech">Tech Debt</option>
+          <option value="spike">Spike</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Prioridad</label>
+        <select class="fs" id="tPriority">
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium" selected>Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Título</label><input class="fi" id="tTitle" placeholder="Como usuario quiero..."></div>
+    <div class="fg"><label class="fl">Descripción</label><textarea class="ft" id="tDesc" placeholder="Contexto, restricciones, notas técnicas..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Puntos (Fibonacci)</label>
+        <select class="fs" id="tPoints">
+          <option value="1">1</option><option value="2">2</option>
+          <option value="3">3</option><option value="5" selected>5</option>
+          <option value="8">8</option><option value="13">13</option>
+          <option value="21">21</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Asignar a</label>
+        <select class="fs" id="tAssignee"></select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Epic</label>
+      <select class="fs" id="tEpic"><option value="">Sin epic</option></select>
+    </div>
+    <div class="fg"><label class="fl">Criterios de aceptación</label>
+      <textarea class="ft" id="tAC" placeholder="✅ Dado... cuando... entonces...&#10;✅ El sistema debe..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-sm btn-ai" onclick="aqEstimate()">✦ Estimar con AI</button>
+      <button class="btn btn-sm btn-ai" onclick="aqRefineTask()">✦ Refinar historia</button>
+    </div>
+    <div class="mf">
+      <button class="btn btn-o" onclick="closeModal('taskOverlay')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveTask()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SPRINT -->
+<div class="overlay" id="sprintOverlay">
+  <div class="modal">
+    <h3>Configurar Sprint</h3>
+    <div class="fg"><label class="fl">Nombre del sprint</label><input class="fi" id="sName" placeholder="Sprint 3"></div>
+    <div class="fg"><label class="fl">Objetivo del sprint</label><textarea class="ft" id="sGoal" placeholder="Al final de este sprint..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Inicio</label><input type="date" class="fi" id="sStart"></div>
+      <div class="fg"><label class="fl">Fin</label><input type="date" class="fi" id="sEnd"></div>
+    </div>
+    <div class="fg"><label class="fl">Capacidad (pts)</label><input type="number" class="fi" id="sCapacity" value="40"></div>
+    <div class="mf">
+      <button class="btn btn-o" onclick="closeModal('sprintOverlay')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveSprint()">Activar Sprint</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   DATA LAYER — fuente única de verdad
+═══════════════════════════════════════════════ */
+const DATA = {
+  team: [
+    { id:'t1', name:'Ana García',  initials:'AG', color:'#1a5fe4' },
+    { id:'t2', name:'Carlos Vega', initials:'CV', color:'#00a872' },
+    { id:'t3', name:'María Liu',   initials:'ML', color:'#a78bfa' },
+  ],
+  epics: [
+    { id:'e1', name:'Auth & Security', color:'#ff4b6e' },
+    { id:'e2', name:'Dashboard UX',    color:'#f59e0b' },
+    { id:'e3', name:'AI Integration',  color:'#00e5a0' },
+  ],
+  sprints: [
+    {
+      id:'sp1', name:'Sprint 1', status:'done',
+      goal:'Establecer base de autenticación y CI/CD',
+      start:'2026-04-14', end:'2026-04-27', capacity:34,
+      committed:34, completed:30
+    },
+    {
+      id:'sp2', name:'Sprint 2', status:'active',
+      goal:'Implementar MFA y dashboard principal con métricas reales',
+      start:'2026-04-28', end:'2026-05-11', capacity:42,
+      committed:38, completed:0
+    },
+  ],
+  activeSprint: 'sp2',
+  items: [
+    { id:'i1',  title:'Login con email y password',          desc:'Flujo básico de autenticación con JWT.',    type:'feature', priority:'critical', points:5,  status:'done',   sprintId:'sp1', epic:'e1', assignee:'t1', ac:'✅ Token válido 1h\n✅ Refresh token 7d\n✅ Rate limit 10 req/min' },
+    { id:'i2',  title:'Configurar pipeline CI/CD',           desc:'GitHub Actions + deploy a staging.',        type:'tech',    priority:'high',     points:8,  status:'done',   sprintId:'sp1', epic:null,  assignee:'t2', ac:'✅ Tests pasan en < 3min\n✅ Deploy auto a staging' },
+    { id:'i3',  title:'Implementar MFA con TOTP',            desc:'MFA SOC2-compliant para todos los usuarios.', type:'feature', priority:'critical', points:13, status:'inprogress', sprintId:'sp2', epic:'e1', assignee:'t1', ac:'✅ TOTP válido 5min\n✅ Máx 3 intentos\n✅ Audit log' },
+    { id:'i4',  title:'Widget de métricas del sprint',       desc:'Card con burndown mini + pts restantes.',   type:'feature', priority:'high',     points:5,  status:'todo',   sprintId:'sp2', epic:'e2', assignee:'t3', ac:'✅ Se actualiza en tiempo real\n✅ Responsive mobile' },
+    { id:'i5',  title:'Notificación login nuevo dispositivo',desc:'Email alert al detectar IP/UA desconocido.',type:'feature', priority:'high',     points:5,  status:'todo',   sprintId:'sp2', epic:'e1', assignee:'t2', ac:'✅ Email en < 30s\n✅ Link de revocación' },
+    { id:'i6',  title:'Fix: sesión expirada sin feedback',   desc:'El usuario ve pantalla blanca en timeout.',  type:'bug',     priority:'critical', points:2,  status:'review', sprintId:'sp2', epic:'e1', assignee:'t1', ac:'✅ Muestra modal "Sesión expirada"\n✅ Redirige a login' },
+    { id:'i7',  title:'Dark mode persistente',               desc:'Toggle dark/light que sobrevive reload.',   type:'feature', priority:'medium',   points:3,  status:'todo',   sprintId:'sp2', epic:'e2', assignee:'t3', ac:'✅ Guarda en localStorage\n✅ Sin FOUC' },
+    { id:'i8',  title:'Integrar Alpaquitay como co-pilot',   desc:'Bridge VS Code → scrum board via WebView.',  type:'spike',   priority:'high',     points:8,  status:'todo',   sprintId:null,  epic:'e3', assignee:'t2', ac:'✅ Detección auto de extensión\n✅ Fallback mock\n✅ API documentada' },
+    { id:'i9',  title:'Exportar sprint a SPEC.md',           desc:'Generar documento spec desde epic activo.', type:'feature', priority:'medium',   points:5,  status:'todo',   sprintId:null,  epic:'e3', assignee:null,  ac:'✅ Formato estándar SPEC\n✅ Descarga como .md' },
+    { id:'i10', title:'Análisis de deuda técnica',           desc:'Spike: evaluar dependencias desactualizadas.',type:'spike',  priority:'low',      points:3,  status:'todo',   sprintId:null,  epic:null,  assignee:null,  ac:'' },
+  ],
+};
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+let STATE = {};
+function initState() {
+  const saved = localStorage.getItem('scrumState');
+  STATE = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DATA));
+}
+function persist() { localStorage.setItem('scrumState', JSON.stringify(STATE)); }
+
+/* ═══════════════════════════════════════════════
+   ALPAQUITAY BRIDGE
+═══════════════════════════════════════════════ */
+const AQ = {
+  connected: false,
+  init() {
+    if (window.__alpaquitay) {
+      this.connected = true;
+      window.__alpaquitay.on('message', (msg) => this._handle(msg));
+    }
+    this._updateBadge();
+  },
+  _updateBadge() {
+    const dot = document.getElementById('aqDot');
+    const lbl = document.getElementById('aqLabel');
+    if (dot) dot.classList.toggle('on', this.connected);
+    if (lbl) lbl.textContent = this.connected ? 'Alpaquitay ●' : 'Alpaquitay';
+  },
+  _handle(msg) { },
+  send(type, payload) {
+    if (this.connected && window.__alpaquitay) {
+      window.__alpaquitay.send({ type, payload });
+    }
+  },
+  async ask(prompt) {
+    if (this.connected && window.__alpaquitay) {
+      return await window.__alpaquitay.ask(prompt);
+    }
+    return this._mock(prompt);
+  },
+  _mock(prompt) {
+    const responses = {
+      estimate: `✦ Estimación sugerida: **5 puntos**\n\nJustificación:\n→ Complejidad media: lógica de negocio clara\n→ Sin dependencias externas bloqueantes\n→ Criterios de aceptación bien definidos\n→ Referencia: tareas similares completadas en 1.5 días`,
+      refine: `✦ Historia refinada:\n\nComo desarrollador, quiero que el sistema valide automáticamente los criterios antes de mover una tarea a "Done", para garantizar calidad consistente.\n\nCriterios de aceptación:\n✅ Dado que una tarea está en "In Review"\n   Cuando el dev la mueve a "Done"\n   Entonces el sistema verifica que todos los ACs están marcados\n✅ Si hay ACs incompletos → bloquear movimiento con mensaje descriptivo\n✅ Log de validación disponible en el historial de la tarea`,
+      health: `✦ Análisis de salud del sprint:\n\n📊 Estado: Sprint al 60% del tiempo\n→ 3 tareas bloqueadas en "Review" — revisar si hay dependencias\n→ MFA (13pts) lleva 5 días en progreso → posible riesgo de no completar\n→ Velocidad promedio del equipo: 30pts → sprint comprometido en 38pts (127%)\n\n🚨 Recomendaciones:\n1. Reducir scope: mover "Dark mode" al backlog (3pts)\n2. Ana García tiene 18pts asignados — redistribuir 1 tarea a Carlos\n3. Hacer un mini-retro sobre el bug de sesión expirada antes del sprint review`,
+      spec: `✦ SPEC generada para el sprint activo:\n\n# SPEC: Sprint 2 — Auth & Dashboard\n\n## Contexto\nSprint de 14 días, capacidad 42pts, objetivo: MFA compliant y dashboard de métricas.\n\n## Entregables\n- MFA TOTP SOC2-compliant (13pts)\n- Widget métricas en tiempo real (5pts)\n- Notificación nuevo dispositivo (5pts)\n- Fix sesión expirada (2pts)\n\n## Criterios de salida del sprint\n✅ Pentesting sin bypass MFA\n✅ Cobertura tests >85%\n✅ Lighthouse performance >90\n✅ Zero P0 bugs en staging`,
+      backlog: `✦ Análisis del backlog:\n\n10 historias totales · 24pts sin sprint asignado\n\n🔍 Recomendaciones de priorización:\n1. "Integrar Alpaquitay" (8pts) → candidata próximo sprint — high value, enabler de otras features\n2. "Exportar SPEC.md" (5pts) → habilita SDD completo, sugiero Sprint 3\n3. "Deuda técnica" (3pts) → agrupar con otras tareas técnicas en sprint dedicado\n\n⚠️ Riesgos detectados:\n→ i8 no tiene assignee → asignar antes de Sprint 3\n→ i9 depende de i8 completado`,
+    };
+    const key = Object.keys(responses).find(k => prompt.includes(k)) || 'health';
+    return new Promise(res => setTimeout(() => res(responses[key] || responses.health), 900));
+  }
+};
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+function getActiveSprint() {
+  return STATE.sprints.find(s => s.id === STATE.activeSprint);
+}
+function getSprintItems(sprintId) {
+  return STATE.items.filter(i => i.sprintId === sprintId);
+}
+function getTeamMember(id) { return STATE.team.find(t => t.id === id); }
+function getEpic(id) { return STATE.epics.find(e => e.id === id); }
+function typeTag(t) {
+  const map = { feature:'tag-feature Feature', bug:'tag-bug Bug', tech:'tag-tech Tech', spike:'tag-spike Spike', epic:'tag-epic Epic' };
+  const [cls, label] = (map[t]||'tag-feature Feature').split(' ');
+  return `<span class="tag ${cls}">${label}</span>`;
+}
+function priorityDot(p) {
+  const cls = {critical:'p-c',high:'p-h',medium:'p-m',low:'p-l'}[p]||'p-m';
+  return `<span class="pdot ${cls}" title="${p}"></span>`;
+}
+function avatarEl(memberId) {
+  const m = getTeamMember(memberId);
+  if (!m) return '';
+  return `<div class="avatar" style="background:${m.color}20;color:${m.color}">${m.initials}</div>`;
+}
+function uid() { return 'i' + Date.now() + Math.random().toString(36).slice(2,6); }
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+function toast(msg, type='ok') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${type==='ok'?'✓':'✕'}</span>${msg}`;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: BOARD
+═══════════════════════════════════════════════ */
+const COLUMNS = [
+  { id:'backlog',    label:'Backlog',     filter: i => !i.sprintId },
+  { id:'todo',       label:'Por Hacer',   filter: i => i.sprintId === STATE.activeSprint && i.status==='todo' },
+  { id:'inprogress', label:'En Progreso', filter: i => i.sprintId === STATE.activeSprint && i.status==='inprogress' },
+  { id:'review',     label:'En Review',   filter: i => i.sprintId === STATE.activeSprint && i.status==='review' },
+  { id:'done',       label:'Completado',  filter: i => i.sprintId === STATE.activeSprint && i.status==='done' },
+];
+
+function renderBoard() {
+  const sprint = getActiveSprint();
+  if (!sprint) return;
+  document.getElementById('sprintName').textContent = sprint.name;
+  document.getElementById('sprintGoal').textContent = sprint.goal;
+
+  const spItems = getSprintItems(sprint.id);
+  const pts = {
+    total: spItems.reduce((a,i) => a+i.points, 0),
+    done: spItems.filter(i=>i.status==='done').reduce((a,i)=>a+i.points,0),
+    remaining: spItems.filter(i=>i.status!=='done').reduce((a,i)=>a+i.points,0),
+    tasks: spItems.length
+  };
+  document.getElementById('sprintStats').innerHTML = [
+    { val: pts.total, lbl:'Pts Sprint' },
+    { val: pts.done, lbl:'Completados' },
+    { val: pts.remaining, lbl:'Restantes' },
+    { val: pts.tasks, lbl:'Historias' },
+  ].map(s => `<div class="s-stat"><div class="val">${s.val}</div><div class="lbl">${s.lbl}</div></div>`).join('');
+
+  document.getElementById('board').innerHTML = COLUMNS.map(col => {
+    const items = STATE.items.filter(col.filter);
+    return `
+      <div class="col" id="col-${col.id}" ondrop="onDrop(event,'${col.id}')" ondragover="onDragOver(event)">
+        <div class="col-hd">
+          <span class="col-title">${col.label}</span>
+          <span class="col-badge">${items.length}</span>
+        </div>
+        <div class="col-add">
+          <button onclick="openModal('task',null,'${col.id}')">+ añadir</button>
+        </div>
+        <div class="col-body" id="colbody-${col.id}">
+          ${items.length ? items.map(renderTaskCard).join('') : `<div class="empty"><div class="eicon">◻</div><p>Sin tareas</p></div>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderTaskCard(item) {
+  const m = getTeamMember(item.assignee);
+  const epic = getEpic(item.epic);
+  return `
+    <div class="task" id="task-${item.id}" draggable="true"
+      ondragstart="onDragStart(event,'${item.id}')"
+      ondragend="onDragEnd(event)">
+      <div class="task-top">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+          ${priorityDot(item.priority)}
+          ${typeTag(item.type)}
+          ${epic ? `<span class="tag" style="background:${epic.color}22;color:${epic.color}">${epic.name}</span>` : ''}
+        </div>
+        <span class="task-pts">${item.points}pt</span>
+      </div>
+      <div class="task-title">${item.title}</div>
+      ${item.desc ? `<div class="task-desc">${item.desc}</div>` : ''}
+      <div class="task-foot">
+        <div class="assignee-chip">
+          ${m ? `${avatarEl(item.assignee)}<span>${m.name.split(' ')[0]}</span>` : '<span style="color:var(--muted)">Sin asignar</span>'}
+        </div>
+        <div class="task-actions">
+          <button class="t-btn ai" onclick="aqTaskAnalysis('${item.id}')" title="Analizar con AI">✦</button>
+          <button class="t-btn" onclick="openModal('task','${item.id}')" title="Editar">✎</button>
+          <button class="t-btn del" onclick="deleteTask('${item.id}')" title="Eliminar">✕</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: BACKLOG
+═══════════════════════════════════════════════ */
+function renderBacklog() {
+  document.getElementById('backlogHead').innerHTML =
+    ['Prioridad','Historia','Tipo','Puntos','Epic','Asignado','Sprint',''].map(h=>`<th>${h}</th>`).join('');
+  const rows = STATE.items
+    .sort((a,b) => ['critical','high','medium','low'].indexOf(a.priority) - ['critical','high','medium','low'].indexOf(b.priority))
+    .map(item => {
+      const m = getTeamMember(item.assignee);
+      const ep = getEpic(item.epic);
+      const sp = STATE.sprints.find(s=>s.id===item.sprintId);
+      return `<tr class="${item.sprintId?'in-sprint':''}">
+        <td>${priorityDot(item.priority)} <span style="font-size:10px;color:var(--muted-lt)">${item.priority}</span></td>
+        <td style="max-width:280px"><div style="font-weight:600;font-size:12px">${item.title}</div>
+          ${item.desc?`<div style="font-size:11px;color:var(--muted);margin-top:2px">${item.desc.slice(0,80)}${item.desc.length>80?'…':''}</div>`:''}
+        </td>
+        <td>${typeTag(item.type)}</td>
+        <td><span style="font-family:var(--mono);color:var(--signal)">${item.points}</span></td>
+        <td>${ep?`<span class="tag" style="background:${ep.color}22;color:${ep.color}">${ep.name}</span>`:'-'}</td>
+        <td>${m?`<div class="assignee-chip">${avatarEl(item.assignee)}<span>${m.name.split(' ')[0]}</span></div>`:'<span style="color:var(--muted)">—</span>'}</td>
+        <td>${sp?`<span class="bdg bdg-g">${sp.name}</span>`:`<span class="bdg bdg-gray">backlog</span>`}</td>
+        <td><div style="display:flex;gap:4px">
+          <button class="t-btn ai" onclick="aqTaskAnalysis('${item.id}')">✦</button>
+          <button class="t-btn" onclick="openModal('task','${item.id}')">✎</button>
+          <button class="t-btn del" onclick="deleteTask('${item.id}')">✕</button>
+        </div></td>
+      </tr>`;
+    });
+  document.getElementById('backlogBody').innerHTML = rows.join('');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: MÉTRICAS
+═══════════════════════════════════════════════ */
+let burndownChart = null;
+function renderMetricas() {
+  renderBurndown();
+  renderVelocity();
+}
+
+function renderBurndown() {
+  const sprint = getActiveSprint();
+  if (!sprint) return;
+  const items = getSprintItems(sprint.id);
+  const total = items.reduce((a,i) => a+i.points, 0);
+  const doneCount = items.filter(i=>i.status==='done').length;
+  const days = 14;
+  const labels = Array.from({length:days}, (_,i) => `D${i+1}`);
+  const ideal = Array.from({length:days}, (_,i) => Math.round(total - (total/days)*(i+1)));
+  const actual = Array(days).fill(null);
+  const currentDay = Math.min(days-1, Math.floor(doneCount * (days/Math.max(items.length,1))));
+  const remaining = items.filter(i=>i.status!=='done').reduce((a,i)=>a+i.points,0);
+  actual[0] = total;
+  if (currentDay > 0) actual[currentDay] = remaining;
+
+  const ctx = document.getElementById('burndownCanvas').getContext('2d');
+  if (burndownChart) burndownChart.destroy();
+  burndownChart = new Chart(ctx, {
+    type:'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'Restantes', data:actual, borderColor:'#ff4b6e', backgroundColor:'rgba(255,75,110,.1)', fill:true, tension:.3, pointRadius:3, spanGaps:true },
+        { label:'Ideal',     data:ideal,  borderColor:'rgba(0,229,160,.5)', borderDash:[4,4], fill:false, pointRadius:0 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ labels:{ color:'#9ca3af', font:{ size:11 } } } },
+      scales:{
+        y:{ beginAtZero:true, grid:{ color:'rgba(255,255,255,.06)' }, ticks:{ color:'#9ca3af', font:{size:10} } },
+        x:{ grid:{ color:'rgba(255,255,255,.04)' }, ticks:{ color:'#9ca3af', font:{size:10} } }
+      }
+    }
+  });
+}
+
+function renderVelocity() {
+  const maxPts = Math.max(...STATE.sprints.map(s => s.committed || 0), 1);
+  document.getElementById('velBars').innerHTML = STATE.sprints.map(sp => {
+    const cmt = Math.round((sp.committed/maxPts)*100);
+    const cpl = Math.round((sp.completed/maxPts)*100);
+    return `<div class="vel-group">
+      <div class="vel-bar-row">
+        <div class="vel-bar vb-cmt" style="height:${cmt}px" title="${sp.committed}pts comprometidos"></div>
+        <div class="vel-bar vb-cpl" style="height:${cpl}px" title="${sp.completed}pts completados"></div>
+      </div>
+      <div class="vel-lbl">${sp.name.replace('Sprint ','S')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: PLANNING
+═══════════════════════════════════════════════ */
+function renderPlanning() {
+  const sprint = getActiveSprint();
+  const used = sprint ? getSprintItems(sprint.id).reduce((a,i)=>a+i.points,0) : 0;
+  const capacity = sprint?.capacity || 40;
+  const pct = Math.min(Math.round((used/capacity)*100), 100);
+
+  document.getElementById('teamCapacity').innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span>Sprint actual</span>
+        <span style="font-family:var(--mono);color:${used>capacity?'var(--accent)':'var(--signal)'}">${used}/${capacity} pts</span>
+      </div>
+      <div class="cap-bar"><div class="cap-fill${used>capacity?' over':''}" style="width:${pct}%"></div></div>
+    </div>
+    ${STATE.team.map(m => {
+      const assigned = STATE.items.filter(i=>i.assignee===m.id&&i.sprintId===STATE.activeSprint).reduce((a,i)=>a+i.points,0);
+      const maxLoad = 20;
+      const mpct = Math.min(Math.round((assigned/maxLoad)*100),100);
+      return `<div style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          ${avatarEl(m.id)}<span style="font-size:12px">${m.name}</span>
+          <span style="margin-left:auto;font-family:var(--mono);font-size:11px;color:${assigned>maxLoad?'var(--accent)':'var(--muted-lt)'}">${assigned}pts</span>
+        </div>
+        <div class="cap-bar"><div class="cap-fill${assigned>maxLoad?' over':''}" style="width:${mpct}%"></div></div>
+      </div>`;
+    }).join('')}
+  `;
+
+  const candidates = STATE.items.filter(i => !i.sprintId)
+    .sort((a,b) => ['critical','high','medium','low'].indexOf(a.priority) - ['critical','high','medium','low'].indexOf(b.priority));
+
+  document.getElementById('candidateItems').innerHTML = candidates.length ? candidates.map(item => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      ${priorityDot(item.priority)}
+      <div style="flex:1;font-size:12px;font-weight:600">${item.title}</div>
+      <span style="font-family:var(--mono);font-size:11px;color:var(--signal)">${item.points}pt</span>
+      <button class="btn btn-sm btn-o" onclick="addToSprint('${item.id}')">→ Sprint</button>
+    </div>`).join('') :
+    `<div class="empty"><div class="eicon">✓</div><p>Backlog vacío — todo está en un sprint</p></div>`;
+}
+
+function addToSprint(itemId) {
+  const item = STATE.items.find(i => i.id === itemId);
+  if (item) { item.sprintId = STATE.activeSprint; item.status = 'todo'; }
+  persist();
+  renderPlanning();
+  renderBoard();
+  toast(`"${item.title.slice(0,30)}..." añadida al sprint`);
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER: ALPAQUITAY PAGE
+═══════════════════════════════════════════════ */
+function renderAlpaquitayPage() {
+  document.getElementById('aqStatus').innerHTML = `
+    <div class="aq-badge" style="cursor:default">
+      <div class="aq-dot ${AQ.connected?'on':''}"></div>
+      <span>${AQ.connected ? 'Conectado a VS Code' : 'Modo simulación'}</span>
+    </div>`;
+
+  const panels = [
+    { icon:'✦', title:'Analizar sprint actual', desc:'Obtiene recomendaciones de salud del sprint, detecta riesgos de no entrega y sugiere redistribución de carga.', action:'aqSprintHealth()', label:'Analizar sprint' },
+    { icon:'📋', title:'Refinar backlog', desc:'Prioriza automáticamente el backlog según valor de negocio, dependencias técnicas y velocidad histórica del equipo.', action:'aqAnalyzeBacklog()', label:'Analizar backlog' },
+    { icon:'📄', title:'Generar SPEC del sprint', desc:'Exporta el sprint activo como documento SPEC.md estructurado, listo para ser versionado en Git junto al código.', action:'aqGenerateSpec()', label:'Generar SPEC' },
+    { icon:'⚡', title:'Estimar historia', desc:'Selecciona una historia del backlog y recibe estimación en Fibonacci con justificación basada en complejidad y referencias históricas.', action:"openModal('task',null,'backlog')", label:'Abrir historia' },
+  ];
+
+  document.getElementById('aqPanels').innerHTML = panels.map(p => `
+    <div class="ai-panel">
+      <div class="ai-panel-title">${p.icon} ${p.title}</div>
+      <p style="font-size:12px;color:var(--muted-lt);margin-bottom:14px">${p.desc}</p>
+      <button class="btn btn-ai btn-sm" onclick="${p.action}">${p.label}</button>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   ALPAQUITAY ACTIONS
+═══════════════════════════════════════════════ */
+async function aqSprintHealth() {
+  const msgEl = document.getElementById('aiSprintMsg');
+  if (msgEl) { msgEl.textContent = '⏳ Analizando sprint...'; msgEl.style.opacity='.5'; }
+  const sprint = getActiveSprint();
+  const items = getSprintItems(sprint?.id || '');
+  const result = await AQ.ask(`health sprint "${sprint?.name}" items:${items.length} done:${items.filter(i=>i.status==='done').length}`);
+  if (msgEl) { msgEl.textContent = result; msgEl.style.opacity='1'; }
+  showPage('metricas', document.querySelectorAll('.nav-btn')[2]);
+}
+
+async function aqAnalyzeBacklog() {
+  const backlog = STATE.items.filter(i=>!i.sprintId);
+  const result = await AQ.ask(`backlog analysis ${backlog.length} items`);
+  showPage('metricas', document.querySelectorAll('.nav-btn')[2]);
+  const msgEl = document.getElementById('aiSprintMsg');
+  if (msgEl) msgEl.textContent = result;
+  toast('Análisis de backlog completado');
+}
+
+async function aqGenerateSpec() {
+  const sprint = getActiveSprint();
+  const result = await AQ.ask(`spec sprint "${sprint?.name}"`);
+  showPage('metricas', document.querySelectorAll('.nav-btn')[2]);
+  const msgEl = document.getElementById('aiSprintMsg');
+  if (msgEl) msgEl.textContent = result;
+
+  const blob = new Blob([result.replace(/✦|📊|🚨|⚠️/g,'').trim()], { type:'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `SPEC-${sprint?.name.replace(/\s+/g,'-')}.md`;
+  a.click();
+  toast('SPEC generada y descargada');
+}
+
+async function aqTaskAnalysis(itemId) {
+  const item = STATE.items.find(i=>i.id===itemId);
+  if (!item) return;
+  const result = await AQ.ask(`refine "${item.title}" ${item.points}pts ${item.type}`);
+  showPage('metricas', document.querySelectorAll('.nav-btn')[2]);
+  const msgEl = document.getElementById('aiSprintMsg');
+  if (msgEl) msgEl.textContent = result;
+  toast(`Análisis de "${item.title.slice(0,25)}..." completado`);
+}
+
+async function aqEstimate() {
+  const title = document.getElementById('tTitle').value;
+  if (!title) { toast('Escribe el título primero', 'err'); return; }
+  const result = await AQ.ask(`estimate "${title}"`);
+  const match = result.match(/\*\*(\d+) puntos\*\*/);
+  if (match) document.getElementById('tPoints').value = match[1];
+  toast('Estimación sugerida: ' + (match?match[1]+'pts':'ver resultado'));
+  showPage('metricas', document.querySelectorAll('.nav-btn')[2]);
+  const msgEl = document.getElementById('aiSprintMsg');
+  if (msgEl) msgEl.textContent = result;
+}
+
+async function aqRefineTask() {
+  const title = document.getElementById('tTitle').value;
+  if (!title) { toast('Escribe el título primero', 'err'); return; }
+  const result = await AQ.ask(`refine "${title}"`);
+  const acEl = document.getElementById('tAC');
+  if (acEl && result.includes('✅')) {
+    acEl.value = result.split('\n').filter(l=>l.includes('✅')||l.includes('Dado')||l.includes('Cuando')||l.includes('Entonces')).join('\n');
+  }
+  toast('Historia refinada por Alpaquitay');
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL: TASK
+═══════════════════════════════════════════════ */
+let editingTaskId = null;
+let defaultColumn = 'todo';
+
+function openModal(type, id=null, col='todo') {
+  if (type === 'task') {
+    editingTaskId = id;
+    defaultColumn = col;
+    document.getElementById('taskModalTitle').textContent = id ? 'Editar Historia' : 'Nueva Historia';
+
+    document.getElementById('tAssignee').innerHTML =
+      `<option value="">Sin asignar</option>` +
+      STATE.team.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+    document.getElementById('tEpic').innerHTML =
+      `<option value="">Sin epic</option>` +
+      STATE.epics.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+
+    if (id) {
+      const item = STATE.items.find(i=>i.id===id);
+      if (item) {
+        document.getElementById('tType').value = item.type;
+        document.getElementById('tPriority').value = item.priority;
+        document.getElementById('tTitle').value = item.title;
+        document.getElementById('tDesc').value = item.desc;
+        document.getElementById('tPoints').value = item.points;
+        document.getElementById('tAssignee').value = item.assignee||'';
+        document.getElementById('tEpic').value = item.epic||'';
+        document.getElementById('tAC').value = item.ac||'';
+      }
+    } else {
+      ['tTitle','tDesc','tAC'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('tType').value = 'feature';
+      document.getElementById('tPriority').value = 'medium';
+      document.getElementById('tPoints').value = '5';
+      document.getElementById('tAssignee').value = '';
+      document.getElementById('tEpic').value = '';
+    }
+    document.getElementById('taskOverlay').classList.add('open');
+  } else if (type === 'sprint') {
+    const today = new Date().toISOString().split('T')[0];
+    const end = new Date(Date.now() + 14*86400000).toISOString().split('T')[0];
+    document.getElementById('sStart').value = today;
+    document.getElementById('sEnd').value = end;
+    document.getElementById('sName').value = `Sprint ${STATE.sprints.length + 1}`;
+    document.getElementById('sGoal').value = '';
+    document.getElementById('sprintOverlay').classList.add('open');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function saveTask() {
+  const title = document.getElementById('tTitle').value.trim();
+  if (!title) { toast('El título es obligatorio', 'err'); return; }
+
+  const statusMap = { backlog:null, todo:'todo', inprogress:'inprogress', review:'review', done:'done' };
+  const col = defaultColumn;
+
+  if (editingTaskId) {
+    const item = STATE.items.find(i=>i.id===editingTaskId);
+    if (item) {
+      item.type = document.getElementById('tType').value;
+      item.priority = document.getElementById('tPriority').value;
+      item.title = title;
+      item.desc = document.getElementById('tDesc').value;
+      item.points = parseInt(document.getElementById('tPoints').value);
+      item.assignee = document.getElementById('tAssignee').value || null;
+      item.epic = document.getElementById('tEpic').value || null;
+      item.ac = document.getElementById('tAC').value;
+    }
+  } else {
+    const newItem = {
+      id: uid(),
+      type: document.getElementById('tType').value,
+      priority: document.getElementById('tPriority').value,
+      title,
+      desc: document.getElementById('tDesc').value,
+      points: parseInt(document.getElementById('tPoints').value),
+      status: col === 'backlog' ? 'todo' : (col || 'todo'),
+      sprintId: col === 'backlog' ? null : STATE.activeSprint,
+      assignee: document.getElementById('tAssignee').value || null,
+      epic: document.getElementById('tEpic').value || null,
+      ac: document.getElementById('tAC').value,
+    };
+    STATE.items.push(newItem);
+  }
+
+  persist();
+  closeModal('taskOverlay');
+  renderAll();
+  toast(editingTaskId ? 'Historia actualizada' : 'Historia creada');
+}
+
+function deleteTask(id) {
+  STATE.items = STATE.items.filter(i => i.id !== id);
+  persist();
+  renderAll();
+  toast('Historia eliminada');
+}
+
+function saveSprint() {
+  const name = document.getElementById('sName').value.trim();
+  if (!name) { toast('Nombre requerido', 'err'); return; }
+
+  const newSprint = {
+    id: 'sp' + Date.now(),
+    name,
+    goal: document.getElementById('sGoal').value,
+    start: document.getElementById('sStart').value,
+    end: document.getElementById('sEnd').value,
+    capacity: parseInt(document.getElementById('sCapacity').value) || 40,
+    status: 'active',
+    committed: 0,
+    completed: 0,
+  };
+  STATE.sprints.forEach(s => { if (s.status === 'active') s.status = 'done'; });
+  STATE.sprints.push(newSprint);
+  STATE.activeSprint = newSprint.id;
+  persist();
+  closeModal('sprintOverlay');
+  renderAll();
+  toast(`${name} activado`);
+}
+
+/* ═══════════════════════════════════════════════
+   DRAG & DROP
+═══════════════════════════════════════════════ */
+let draggingId = null;
+function onDragStart(ev, id) {
+  draggingId = id;
+  ev.dataTransfer.effectAllowed = 'move';
+  document.getElementById('task-'+id)?.classList.add('dragging');
+}
+function onDragEnd(ev) {
+  document.querySelectorAll('.task.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.col-body.dov').forEach(el => el.classList.remove('dov'));
+}
+function onDragOver(ev) {
+  ev.preventDefault();
+  ev.dataTransfer.dropEffect = 'move';
+  const col = ev.target.closest('.col');
+  if (col) col.querySelector('.col-body')?.classList.add('dov');
+}
+function onDrop(ev, colId) {
+  ev.preventDefault();
+  if (!draggingId) return;
+  const item = STATE.items.find(i => i.id === draggingId);
+  if (!item) return;
+
+  const statusMap = { backlog:null, todo:'todo', inprogress:'inprogress', review:'review', done:'done' };
+  if (colId === 'backlog') {
+    item.sprintId = null;
+    item.status = 'todo';
+  } else {
+    item.sprintId = STATE.activeSprint;
+    item.status = statusMap[colId] || 'todo';
+  }
+
+  if (colId === 'done') {
+    const sprint = getActiveSprint();
+    if (sprint) sprint.completed = (sprint.completed||0) + item.points;
+  }
+
+  persist();
+  renderAll();
+  draggingId = null;
+}
+
+/* ═══════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════ */
+function showPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  if (btn) btn.classList.add('active');
+  window.scrollTo({ top:0, behavior:'smooth' });
+
+  if (id === 'board') renderBoard();
+  else if (id === 'backlog') renderBacklog();
+  else if (id === 'metricas') renderMetricas();
+  else if (id === 'planning') renderPlanning();
+  else if (id === 'alpaquitay') renderAlpaquitayPage();
+}
+
+function renderAll() {
+  const active = document.querySelector('.page.active');
+  if (!active) return;
+  const id = active.id.replace('page-','');
+  if (id === 'board') renderBoard();
+  else if (id === 'backlog') renderBacklog();
+  else if (id === 'metricas') renderMetricas();
+  else if (id === 'planning') renderPlanning();
+  else if (id === 'alpaquitay') renderAlpaquitayPage();
+}
+
+/* ═══════════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════════ */
+initState();
+AQ.init();
+renderBoard();
+
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
