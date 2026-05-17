@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alpaquitay AI — Scrum / SDD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="../" class="nav-brand">▲ SCRUM / SDD</a>
+  <a href="../" class="nav-btn">Board</a>
+  <a href="../backlog/" class="nav-btn">Backlog</a>
+  <a href="../metricas/" class="nav-btn">Métricas</a>
+  <a href="../planning/" class="nav-btn">Planning</a>
+  <div class="nav-spacer"></div>
+  <a href="../alpaquitay/" class="aq-badge active" id="aqBadge" style="border-color:var(--signal);background:rgba(0,229,160,.08)">
+    <div class="aq-dot" id="aqDot"></div>
+    <span id="aqLabel">Alpaquitay</span>
+  </a>
+</nav>
+
+<!-- PAGE: ALPAQUITAY -->
+<div id="page-alpaquitay" class="page active">
+  <div class="container">
+    <div class="sh" style="margin-bottom:20px">
+      <div><h2>✦ Alpaquitay AI</h2><p>Asistente de ingeniería integrado con el tablero</p></div>
+      <div id="aqStatus"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px" id="aqPanels"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="../data.js"></script>
+<script>
+initState();
+AQ.init();
+renderAlpaquitayPage();
+</script>
+</body>
+</html>

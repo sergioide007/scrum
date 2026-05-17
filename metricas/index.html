@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Métricas — Scrum / SDD | Alpaquitay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="../" class="nav-brand">▲ SCRUM / SDD</a>
+  <a href="../" class="nav-btn">Board</a>
+  <a href="../backlog/" class="nav-btn">Backlog</a>
+  <a href="../metricas/" class="nav-btn active">Métricas</a>
+  <a href="../planning/" class="nav-btn">Planning</a>
+  <div class="nav-spacer"></div>
+  <a href="../alpaquitay/" class="aq-badge" id="aqBadge">
+    <div class="aq-dot" id="aqDot"></div>
+    <span id="aqLabel">Alpaquitay</span>
+  </a>
+</nav>
+
+<!-- PAGE: MÉTRICAS -->
+<div id="page-metricas" class="page active">
+  <div class="container">
+    <div class="sh" style="margin-bottom:20px">
+      <div><h2>Métricas del Sprint</h2><p>Burndown, velocidad y salud del equipo</p></div>
+    </div>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Burndown Chart</h3>
+        <p class="sub">Puntos restantes vs. línea ideal del sprint activo</p>
+        <div class="chart-wrap"><canvas id="burndownCanvas" height="180"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Velocidad por Sprint</h3>
+        <p class="sub">Comprometidos <span style="color:var(--warn)">▪</span> vs. Completados <span style="color:var(--signal)">▪</span></p>
+        <div id="velBars" class="vel-bars"></div>
+      </div>
+    </div>
+    <div class="ai-panel" style="margin-top:18px">
+      <div class="ai-panel-title">✦ Análisis de Sprint — Alpaquitay</div>
+      <div class="ai-msg" id="aiSprintMsg">Presiona "Analizar Sprint" para obtener recomendaciones basadas en el estado actual.</div>
+      <div class="ai-actions">
+        <button class="btn btn-sm btn-ai" onclick="aqSprintHealth()">Analizar Sprint</button>
+        <button class="btn btn-sm btn-o" onclick="aqGenerateSpec()">Generar SPEC del Sprint</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="../data.js"></script>
+<script>
+initState();
+AQ.init();
+renderMetricas();
+</script>
+</body>
+</html>

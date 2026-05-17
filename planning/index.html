@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planning — Scrum / SDD | Alpaquitay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="../" class="nav-brand">▲ SCRUM / SDD</a>
+  <a href="../" class="nav-btn">Board</a>
+  <a href="../backlog/" class="nav-btn">Backlog</a>
+  <a href="../metricas/" class="nav-btn">Métricas</a>
+  <a href="../planning/" class="nav-btn active">Planning</a>
+  <div class="nav-spacer"></div>
+  <a href="../alpaquitay/" class="aq-badge" id="aqBadge">
+    <div class="aq-dot" id="aqDot"></div>
+    <span id="aqLabel">Alpaquitay</span>
+  </a>
+</nav>
+
+<!-- PAGE: PLANNING -->
+<div id="page-planning" class="page active">
+  <div class="container">
+    <div class="sh" style="margin-bottom:20px">
+      <div><h2>Sprint Planning</h2><p>Capacidad del equipo y selección de historias</p></div>
+      <button class="btn btn-sm btn-p" onclick="openModal('sprint')">Nuevo Sprint</button>
+    </div>
+    <div class="plan-grid">
+      <div class="plan-card">
+        <h3>Capacidad del Equipo</h3>
+        <div id="teamCapacity"></div>
+      </div>
+      <div class="plan-card">
+        <h3>Historias candidatas al sprint</h3>
+        <div id="candidateItems"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SPRINT -->
+<div class="overlay" id="sprintOverlay">
+  <div class="modal">
+    <h3>Configurar Sprint</h3>
+    <div class="fg"><label class="fl">Nombre del sprint</label><input class="fi" id="sName" placeholder="Sprint 3"></div>
+    <div class="fg"><label class="fl">Objetivo del sprint</label><textarea class="ft" id="sGoal" placeholder="Al final de este sprint..."></textarea></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Inicio</label><input type="date" class="fi" id="sStart"></div>
+      <div class="fg"><label class="fl">Fin</label><input type="date" class="fi" id="sEnd"></div>
+    </div>
+    <div class="fg"><label class="fl">Capacidad (pts)</label><input type="number" class="fi" id="sCapacity" value="40"></div>
+    <div class="mf">
+      <button class="btn btn-o" onclick="closeModal('sprintOverlay')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveSprint()">Activar Sprint</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="../data.js"></script>
+<script>
+initState();
+AQ.init();
+renderPlanning();
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+});
+</script>
+</body>
+</html>
